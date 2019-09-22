@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- encoding: utf-8 -*-
-
+import multiprocessing
+multiprocessing.set_start_method('spawn', True)
 
 from logger import setup_logger
 from model import BiSeNet
@@ -52,8 +53,8 @@ def train():
 
     ## dataset
     n_classes = 19
-    n_img_per_gpu = 8
-    n_workers = 4
+    n_img_per_gpu = 4
+    n_workers = 1
     cropsize = [1024, 1024]
     ds = CityScapes('./data', cropsize=cropsize, mode='train')
     sampler = torch.utils.data.distributed.DistributedSampler(ds)
