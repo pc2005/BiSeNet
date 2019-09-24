@@ -159,8 +159,8 @@ def evaluate(respth='./res', dspth='./data'):
     net.eval()
 
     ## dataset
-    batchsize = 5
-    n_workers = 2
+    batchsize = 3
+    n_workers = 1
     dsval = CityScapes(dspth, mode='val')
     dl = DataLoader(dsval,
                     batch_size = batchsize,
