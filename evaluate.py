@@ -131,8 +131,10 @@ class MscEval(object):
         n_classes = self.n_classes
         hist = np.zeros((n_classes, n_classes), dtype=np.float32)
         dloader = tqdm(self.dl)
+        
         if dist.is_initialized() and not dist.get_rank()==0:
             dloader = self.dl
+
         for i, (imgs, label) in enumerate(dloader):
             N, _, H, W = label.shape
             probs = torch.zeros((N, self.n_classes, H, W))
