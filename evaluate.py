@@ -14,6 +14,10 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.distributed as dist
 
+# To export to ONNX
+from torch.autograd import Variable
+import torch.onnx as onnx
+
 import os
 import os.path as osp
 import logging
@@ -192,6 +196,10 @@ def evaluate(respth='./res', dspth='./data'):
     ## evaluator
     logger.info('compute the mIOU')
     evaluator = MscEval(net, dl)
+
+    # ## export to ONNX
+    # dummy_input = Variable(torch.randn(batchsize, 3, 1024, 1024)).cuda()
+    # onnx.export(net, dummy_input, "bisenet.proto", verbose=True)
 
     ## eval
     mIOU = evaluator.evaluate()
