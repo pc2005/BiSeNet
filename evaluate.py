@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- encoding: utf-8 -*-
 
+import multiprocessing
+multiprocessing.set_start_method('spawn', True)
+
 from logger import setup_logger
 from model import BiSeNet
 from cityscapes import CityScapes
@@ -11,6 +14,10 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.distributed as dist
 
+# To export to ONNX
+from torch.autograd import Variable
+import torch.onnx as onnx
+
 import os
 import os.path as osp
 import logging
@@ -19,6 +26,8 @@ import numpy as np
 from tqdm import tqdm
 import math
 
+## pc: for debug
+import cv2
 
 
 class MscEval(object):
@@ -118,12 +127,18 @@ class MscEval(object):
 
 
     def evaluate(self):
+        ## ? pc: debug
+        cv2.namedWindow('test_1', cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow('test_2', cv2.WINDOW_AUTOSIZE)
+
         ## evaluate
         n_classes = self.n_classes
         hist = np.zeros((n_classes, n_classes), dtype=np.float32)
         dloader = tqdm(self.dl)
+        
         if dist.is_initialized() and not dist.get_rank()==0:
             dloader = self.dl
+
         for i, (imgs, label) in enumerate(dloader):
             N, _, H, W = label.shape
             probs = torch.zeros((N, self.n_classes, H, W))
@@ -135,10 +150,20 @@ class MscEval(object):
             probs = probs.data.numpy()
             preds = np.argmax(probs, axis=1)
 
+            ## ? pc: debug
+            cv2.imshow('test_1', np.uint8(preds[0, :, :]*10))
+            cv2.imshow('test_2', np.uint8(preds[1, :, :]*10))
+            cv2.waitKey(1)
+
             hist_once = self.compute_hist(preds, label.data.numpy().squeeze(1))
             hist = hist + hist_once
+
         IOUs = np.diag(hist) / (np.sum(hist, axis=0)+np.sum(hist, axis=1)-np.diag(hist))
         mIOU = np.mean(IOUs)
+
+        ## ? pc: debug
+        cv2.destroyAllWindows()
+
         return mIOU
 
 
@@ -159,8 +184,8 @@ def evaluate(respth='./res', dspth='./data'):
     net.eval()
 
     ## dataset
-    batchsize = 5
-    n_workers = 2
+    batchsize = 2
+    n_workers = 1
     dsval = CityScapes(dspth, mode='val')
     dl = DataLoader(dsval,
                     batch_size = batchsize,
@@ -171,6 +196,10 @@ def evaluate(respth='./res', dspth='./data'):
     ## evaluator
     logger.info('compute the mIOU')
     evaluator = MscEval(net, dl)
+
+    # ## export to ONNX
+    # dummy_input = Variable(torch.randn(batchsize, 3, 1024, 1024)).cuda()
+    # onnx.export(net, dummy_input, "bisenet.proto", verbose=True)
 
     ## eval
     mIOU = evaluator.evaluate()

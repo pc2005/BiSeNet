@@ -33,6 +33,9 @@ class CityScapes(Dataset):
         impth = osp.join(rootpth, 'leftImg8bit', mode)
         folders = os.listdir(impth)
         for fd in folders:
+            # skipped avp data
+            if 'avp_data' in fd:
+                continue
             fdpth = osp.join(impth, fd)
             im_names = os.listdir(fdpth)
             names = [el.replace('_leftImg8bit.png', '') for el in im_names]
@@ -46,6 +49,9 @@ class CityScapes(Dataset):
         gtpth = osp.join(rootpth, 'gtFine', mode)
         folders = os.listdir(gtpth)
         for fd in folders:
+            # skipped avp data
+            if 'avp_data' in fd:
+                continue
             fdpth = osp.join(gtpth, fd)
             lbnames = os.listdir(fdpth)
             lbnames = [el for el in lbnames if 'labelIds' in el]

@@ -46,7 +46,7 @@ def train():
     dist.init_process_group(
                 backend = 'nccl',
                 init_method = 'tcp://127.0.0.1:33271',
-                world_size = torch.cuda.device_count(),
+                world_size = torch.cuda.device_count(), # set to 1 for debug
                 rank=args.local_rank
                 )
     setup_logger(respth)
